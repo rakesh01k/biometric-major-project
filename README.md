@@ -30,4 +30,22 @@ This project demonstrates secure access control using biometric recognition inst
 ---
 
 ## ✅ Project Structure
+biometric-major-project/
+│
+├── app/ # Frontend (Next.js)
+├── components/ # UI components
+├── lib/ # Utils / helpers
+├── public/ # Static files
+├── styles/ # Styling
+│
+├── authentication.py # Biometric verification logic
+├── enrollment.py # Biometric enrollment logic
+├── fingerprint_processor.py # Core fingerprint processing
+├── database.py # Database operations
+│
+├── PROJECT_REPORT.md # Documentation
+├── README.md # Project readme
+└── .gitignore
+---
+
 
