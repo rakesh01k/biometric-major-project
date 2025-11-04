@@ -30,7 +30,7 @@ This project demonstrates secure access control using biometric recognition inst
 ---
 
 ## ✅ Project Structure
-biometric-major-project/
+## biometric-major-project/
 │
 ├── app/ # Frontend (Next.js)
 ├── components/ # UI components
