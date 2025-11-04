@@ -1,6 +1,8 @@
 // Authentication utilities using localStorage
 // This stores user data locally - can be migrated to a database later
 
+import { generateDeviceFingerprint, verifyDeviceFingerprint } from "./device-fingerprint"
+
 export interface User {
   userId: string
   isAdmin: boolean
@@ -232,49 +234,62 @@ export async function authenticateWebAuthn(email: string): Promise<boolean> {
 }
 
 function generateFallbackFingerprint(): string {
-  // Generate a realistic-looking fingerprint hash for preview environment
+  // This acts as a credential identifier for demo purposes
   return `FP_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`
 }
 
-export function registerFingerprint(email: string, fingerprintData: string): boolean {
+export async function registerFingerprint(email: string, fingerprintData: string): Promise<boolean> {
   const users = getAllUsers()
   const userIndex = users.findIndex((u) => u.email.toLowerCase() === email.toLowerCase())
 
   if (userIndex === -1) {
-    return false // User not found
+    return false
   }
 
-  const fingerprintHash = generateFingerprintHash(email)
-  console.log("[v0] Registering fingerprint for", email, "hash:", fingerprintHash)
-  users[userIndex].fingerprint = fingerprintHash
+  // The device fingerprint is generated fresh each time for verification
+  users[userIndex].fingerprint = fingerprintData || (await generateDeviceFingerprint())
   localStorage.setItem(USERS_KEY, JSON.stringify(users))
-  console.log("[v0] Fingerprint registered. All users:", users)
+  console.log("[v0] Fingerprint registered for", email)
   return true
 }
 
-export function verifyFingerprint(email: string, fingerprintData: string): User | null {
+export async function verifyFingerprintForUser(email: string): Promise<User | null> {
   const user = findUserByEmail(email)
-  console.log("[v0] Verifying fingerprint for", email, "user found:", !!user)
 
-  if (!user || !user.fingerprint) {
-    console.log("[v0] User not found or no fingerprint enrolled")
+  if (!user) {
     return null
   }
 
-  const fingerprintHash = generateFingerprintHash(email)
-  console.log("[v0] Stored fingerprint:", user.fingerprint, "Generated hash:", fingerprintHash)
-
-  if (user.fingerprint === fingerprintHash) {
-    console.log("[v0] Fingerprint verified successfully")
-    return user
+  // If user has a fingerprint enrolled, verify it matches current device
+  if (user.fingerprint) {
+    const isValid = await verifyDeviceFingerprint(user.fingerprint)
+    if (isValid) {
+      console.log("[v0] Device fingerprint verified for", email)
+      return user
+    } else {
+      console.log("[v0] Device fingerprint does not match for", email)
+      return null
+    }
   }
-  console.log("[v0] Fingerprint verification failed - hashes don't match")
+
   return null
 }
 
-function generateFingerprintHash(email: string): string {
-  // Create a consistent hash based only on email
-  return `FP_${email.toLowerCase()}_enrolled`.replace(/[^a-zA-Z0-9_]/g, "")
+export async function verifyFingerprint(email: string, fingerprintData: string): Promise<User | null> {
+  const user = findUserByEmail(email)
+
+  if (!user || !user.fingerprint) {
+    return null
+  }
+
+  const isValid = await verifyDeviceFingerprint(user.fingerprint)
+  if (isValid) {
+    console.log("[v0] Device fingerprint verified successfully for", email)
+    return user
+  }
+
+  console.log("[v0] Device fingerprint verification failed for", email)
+  return null
 }
 
 export function hasFingerprint(email: string): boolean {

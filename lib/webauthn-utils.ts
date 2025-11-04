@@ -39,9 +39,10 @@ export function getWebAuthnStatus(): {
   if (!available) {
     message = "WebAuthn is not supported in your browser"
   } else if (inPreview) {
-    message = "WebAuthn is limited in preview mode. Deploy to production for full Touch ID support."
+    message =
+      "⚠️ WebAuthn requires deployment to production. The v0 preview uses device fingerprinting instead for testing."
   } else {
-    message = "WebAuthn is available"
+    message = "✓ WebAuthn (Touch ID) is available and will be used for real biometric authentication"
   }
 
   return { available, inPreview, message }

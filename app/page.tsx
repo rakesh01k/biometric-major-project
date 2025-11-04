@@ -10,9 +10,9 @@ import {
   verifyCredentials,
   createSession,
   isAuthenticated,
-  verifyFingerprint,
   hasFingerprint,
   authenticateWebAuthn,
+  findUserByEmail,
 } from "@/lib/auth"
 
 export default function LoginPage() {
@@ -100,22 +100,13 @@ export default function LoginPage() {
       const webAuthnSuccess = await authenticateWebAuthn(fingerprintEmail)
 
       if (!webAuthnSuccess) {
-        const user = verifyFingerprint(fingerprintEmail, "")
-        console.log("[v0] Fingerprint verification result:", user)
-
-        if (!user) {
-          setErrors({ fingerprint: "Fingerprint verification failed. Please try again or use email/password login." })
-          setIsScanningFingerprint(false)
-          return
-        }
-
-        createSession(user)
-        router.push("/dashboard")
+        setErrors({ fingerprint: "Fingerprint verification failed. Please try again or use email/password login." })
+        setIsScanningFingerprint(false)
         return
       }
 
       // WebAuthn successful - find user and create session
-      const user = verifyFingerprint(fingerprintEmail, "")
+      const user = findUserByEmail(fingerprintEmail)
       if (!user) {
         setErrors({ fingerprint: "User not found. Please sign up first." })
         setIsScanningFingerprint(false)

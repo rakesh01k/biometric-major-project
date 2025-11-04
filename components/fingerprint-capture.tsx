@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Fingerprint, RotateCcw } from "lucide-react"
+import { generateDeviceFingerprint } from "@/lib/device-fingerprint"
 
 interface FingerprintCaptureProps {
   onCapture: (fingerprintData: string) => void
@@ -13,6 +14,7 @@ export function FingerprintCapture({ onCapture }: FingerprintCaptureProps) {
   const [scanProgress, setScanProgress] = useState(0)
   const [isCaptured, setIsCaptured] = useState(false)
   const [capturedData, setCapturedData] = useState<string | null>(null)
+  const [deviceInfo, setDeviceInfo] = useState<string>("")
 
   const generateFingerprintPattern = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d")
@@ -51,10 +53,13 @@ export function FingerprintCapture({ onCapture }: FingerprintCaptureProps) {
     }
   }
 
-  const startScanning = () => {
+  const startScanning = async () => {
     setIsScanning(true)
     setScanProgress(0)
     setIsCaptured(false)
+
+    const realFingerprint = await generateDeviceFingerprint()
+    setDeviceInfo(realFingerprint)
 
     // Simulate scanning progress
     const interval = setInterval(() => {
@@ -79,14 +84,15 @@ export function FingerprintCapture({ onCapture }: FingerprintCaptureProps) {
 
   useEffect(() => {
     if (isCaptured && capturedData) {
-      onCapture(capturedData)
+      onCapture(deviceInfo || capturedData)
     }
-  }, [isCaptured, capturedData, onCapture])
+  }, [isCaptured, capturedData, deviceInfo, onCapture])
 
   const resetCapture = () => {
     setIsCaptured(false)
     setScanProgress(0)
     setCapturedData(null)
+    setDeviceInfo("")
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d")
       if (ctx) {
@@ -118,7 +124,7 @@ export function FingerprintCapture({ onCapture }: FingerprintCaptureProps) {
             <div className="absolute inset-0 bg-teal-500 bg-opacity-10 flex items-center justify-center">
               <div className="text-center">
                 <Fingerprint className="w-12 h-12 text-teal-600 mx-auto mb-2 animate-pulse" />
-                <p className="text-sm font-semibold text-teal-600">Scanning...</p>
+                <p className="text-sm font-semibold text-teal-600">Scanning Device...</p>
               </div>
             </div>
           )}
@@ -148,10 +154,17 @@ export function FingerprintCapture({ onCapture }: FingerprintCaptureProps) {
 
       {/* Status Message */}
       <div className="text-center">
-        {!isCaptured && !isScanning && <p className="text-slate-600">Ready to capture your fingerprint</p>}
-        {isScanning && <p className="text-teal-600 font-semibold">Keep your finger steady...</p>}
-        {isCaptured && <p className="text-green-600 font-semibold">Fingerprint captured successfully!</p>}
+        {!isCaptured && !isScanning && <p className="text-slate-600">Ready to scan your device fingerprint</p>}
+        {isScanning && <p className="text-teal-600 font-semibold">Capturing device fingerprint...</p>}
+        {isCaptured && <p className="text-green-600 font-semibold">Device fingerprint captured successfully!</p>}
       </div>
+
+      {/* Device Info Display */}
+      {deviceInfo && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-xs font-mono text-blue-900 break-all">{deviceInfo}</p>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex gap-4 justify-center">
